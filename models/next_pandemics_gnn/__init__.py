@@ -1,0 +1,1 @@
+# NextPandemicsGNN package

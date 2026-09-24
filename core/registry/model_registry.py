@@ -2,6 +2,7 @@ from facade_pattern.cheapnet_facade import CheapNetFacade
 from facade_pattern.gign_facade import GIGNFacade
 from facade_pattern.graph_dta_facade import DTAFacade
 from facade_pattern.planet_facade import PlanetFacade
+from facade_pattern.nextpandemics_facade import NextPandemicsGNNFacade
 
 MODEL_REGISTRY = {
     "cheapnet": {
@@ -40,4 +41,13 @@ MODEL_REGISTRY = {
             "predict": "Predict",
         },
     },
+    "nextpandemics": {
+            "display_name": "NextPandemicsGNN",
+            "facade": NextPandemicsGNNFacade(),
+            "tasks": {
+                "generate_data": "Generate dataset",
+                "train": "Train model",
+                "predict": "Predict",
+            },
+        },
 }

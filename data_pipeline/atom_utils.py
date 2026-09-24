@@ -1,54 +1,22 @@
 import numpy as np
+from rdkit import Chem
+
 
 ATOM_TYPES = ["C", "N", "O", "S", "H", "P", "F", "Cl", "Br", "I"]
 
-ATOM_TYPES_DTA = [
-    "C",
-    "N",
-    "O",
-    "S",
-    "F",
-    "Si",
-    "P",
-    "Cl",
-    "Br",
-    "Mg",
-    "Na",
-    "Ca",
-    "Fe",
-    "As",
-    "Al",
-    "I",
-    "B",
-    "V",
-    "K",
-    "Tl",
-    "Yb",
-    "Sb",
-    "Sn",
-    "Ag",
-    "Pd",
-    "Co",
-    "Se",
-    "Ti",
-    "Zn",
-    "H",
-    "Li",
-    "Ge",
-    "Cu",
-    "Au",
-    "Ni",
-    "Cd",
-    "In",
-    "Mn",
-    "Zr",
-    "Cr",
-    "Pt",
-    "Hg",
-    "Pb",
-    "Unknown",
-]
+ATOM_TYPES_DTA = ["C","N","O","S","F","Si","P","Cl","Br","Mg","Na","Ca","Fe","As",
+                  "Al","I","B","V","K","Tl","Yb","Sb","Sn","Ag","Pd","Co","Se","Ti",
+                  "Zn","H","Li","Ge","Cu","Au","Ni","Cd","In","Mn","Zr","Cr","Pt",
+                  "Hg","Pb","Unknown"]
 
+HBD_PATTERN = Chem.MolFromSmarts('[$([N;!H0;v3,v4&+1]),$([O,S;H1;+0]),n&H1&+0]')
+
+# Aceptor: N u O con pares libres disponibles (definición estándar de Lipinski)
+HBA_PATTERN = Chem.MolFromSmarts(
+    '[$([O,S;H1;v2;!$(*-*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N;v3;!$(N-*=[O,N,P,S])]),n&H0&+0,$([o,s;+0;!$([o,s]:n);!$([o,s]:c:n)])]')
+
+# Patrón para enlace rotable: Enlace simple (-), no en anillo (!@), entre átomos no terminales (!D1)
+FLEXIBILITY_BOND_PATTERN = Chem.MolFromSmarts('[!$(*#*)&!D1]-&!@[!$(*#*)&!D1]')
 
 def atom_type_onehot(symbol):
     vec = [0] * len(ATOM_TYPES)
