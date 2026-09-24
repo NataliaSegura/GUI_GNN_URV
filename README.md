@@ -2,7 +2,7 @@
 
 ## Authors
 
-**Mohamed Abdessalame** & **Mohamed El-Boukhiari**
+**Natàlia Segura** & **Mohamed Abdessalame** & **Mohamed El-Boukhiari**
 
 ## Overview
 
