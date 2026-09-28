@@ -13,7 +13,7 @@ from job_config.nextpandemics.NextPandemicsDataConfig import  NextPandemicsDataC
 
 config = NextPandemicsDataConfig(
     pic50_path=Path("C:\\Users\\natal\\code_binding_data_and_results\\data\\Mpro-URV\\pIC50.txt"),
-    ligand_path=Path("C:\\Users\\natal\\code_binding_data_and_results\\data\\Mpro-URV\\Ligand"),
+    ligand_path=Path("C:\\Users\\natal\\code_binding_data_and_results\\data\\Mpro-URV\\Ligand\\Ligand_SDF"),
     protein_path=None,
     interaction_path=None,
     output_path=Path("output_test_nextpandemics")

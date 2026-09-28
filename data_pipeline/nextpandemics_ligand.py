@@ -3,6 +3,7 @@
 from pathlib import Path
 from rdkit import Chem
 from rdkit.Chem import rdPartialCharges
+from typing import Dict, List, Optional, Tuple
 
 from data_pipeline.atom_utils import HBD_PATTERN, HBA_PATTERN, FLEXIBILITY_BOND_PATTERN
 
@@ -22,21 +23,21 @@ class Ligand:
         num_atoms: Number of non-hydrogen atoms
     """
 
-    def __init__(self, sdf_path: str, min_coord: list, max_coord: list):
+    def __init__(self, ligand_path: str, min_coord: list, max_coord: list):
         """
         Initialize a Ligand object from an SDF file.
 
         Args:
             sdf_path: Path to the SDF file
         """
-        self.sdf_path = sdf_path
+        self.ligand_path = ligand_path
         self.mol = None
         self.name = None
         self.features = []
         self.edges = []
         self.edge_features = []
         self.coordinates = []
-        self.atom_names_pdb = None
+        self.atom_names_pdb = []
         self.num_atoms = 0
         self.index_H_atoms = []
 
@@ -52,7 +53,7 @@ class Ligand:
 
         # Load molecule
         self._load_molecule()
-        self._build_graph(min_coord, max_coords) 
+        self._build_graph(min_coord, max_coord) 
 
 
     def _extract_atom_names_from_cif(self):
@@ -60,9 +61,8 @@ class Ligand:
         Read a CIF file and extract atom names from the _atom_site.label_atom_id column.
         Returns a list of atom names (e.g., ['N', 'C', 'C1', 'N1', ...]).
         """
-        cif_path = self.sdf_path.replace("Ligand_SDF", "Ligand_CIF").replace(".sdf", ".cif")
-        atom_names = []
-        if self.sdf_path.split('\\')[-1].split('_')[0] == '9G0I':
+        cif_path = self.ligand_path.replace("Ligand_SDF", "Ligand_CIF").replace(".sdf", ".cif")
+        if self.ligand_path.split('\\')[-1].split('_')[0] == '9G0I':
             d = 0
         with open(cif_path, "r") as f:
             for line in f:
@@ -71,22 +71,24 @@ class Ligand:
                     fields = line.split()
                     if len(fields) >= 4:  # ensure column exists
                        if not fields[3].startswith('H') and (fields[4] == '.' or fields[4] == 'A'):
-                            atom_names.append(fields[3])
-        return atom_names
+                            self.atom_names_pdb.append(fields[3])
+                            if self.name == '' or self.name is None or self.name == 'UNK':
+                                self.name = fields[5]
+
 
     def _load_molecule(self):
         """Load molecule from SDF file."""
 
-        mol_supplier = Chem.SDMolSupplier(self.sdf_path, sanitize=True, removeHs=False)
+        mol_supplier = Chem.SDMolSupplier(self.ligand_path, sanitize=True, removeHs=False)
 
         self.mol = mol_supplier[0]
 
         if self.mol is None:
-            raise ValueError(f"Invalid SDF file or molecule at: {self.sdf_path}")
+            raise ValueError(f"Invalid SDF file or molecule at: {self.ligand_path}")
 
         # Extract name
-        self.name = self.mol.GetProp("_Name") if self.mol.HasProp("_Name") else "UNK"
-        self.atom_names_pdb = self._extract_atom_names_from_cif()
+        self.name = self.mol.GetProp("_Name") if bool(self.mol.HasProp("_Name")) else "UNK"
+        self._extract_atom_names_from_cif()
         # Compute charges
         rdPartialCharges.ComputeGasteigerCharges(self.mol)
 
@@ -101,6 +103,41 @@ class Ligand:
             # Añadimos ambas direcciones porque nuestro grafo será bidireccional
             self.flexible_edges.add((match[0], match[1]))
             self.flexible_edges.add((match[1], match[0]))
+
+
+    def _atom_features_one_hot(self, atom) -> np.ndarray:
+        """ Extract features for a single atom.
+        Args: atom: RDKit atom object
+        Returns: Feature vector as numpy array """
+
+        element_vec = self._one_of_k_encoding_unk(atom.GetSymbol(), PERIODIC_ELEMENTS)
+        degree = [atom.GetDegree() / 10.0]
+        num_h = [atom.GetTotalNumHs() / 10.0]
+        is_aromatic = [float(atom.GetIsAromatic())]
+        resname_vec = self._one_of_k_encoding_unk("LIG", list(AA_3TO1.keys()))
+
+        if self.node_feature_selection == 0:
+            hybrid = atom.GetHybridization().name
+            hybridization = self._one_of_k_encoding_unk(hybrid, HYBRIDIZATION)
+            features = element_vec + resname_vec + hybridization + degree + num_h + is_aromatic
+
+        elif self.node_feature_selection == 1:
+            implicit_val = [atom.GetImplicitValence() / 10.0]
+            features = element_vec + resname_vec  + degree + num_h + is_aromatic + implicit_val
+
+        return np.array(features)
+
+
+
+    def _extract_atom_features(self):
+        """Extract one-hot encoded features for each non-hydrogen atom."""
+
+        for i, atom in enumerate(self.mol.GetAtoms()):
+            if atom.GetSymbol() != 'H':
+                feat = self._atom_features_one_hot(atom)
+                self.features.append(feat)
+            else:
+                self.index_H_atoms.append(i)
 
 
 

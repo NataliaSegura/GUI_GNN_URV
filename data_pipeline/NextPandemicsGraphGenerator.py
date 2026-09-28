@@ -19,8 +19,8 @@ class NextPandemicsGraphGenerator:
     def _build_ligand_graphs(self, collection, pdb_id, pic50, min_coord, max_coord):
         """Single-sample graph creation."""
         #print(f"Building ligand graph for {pdb_id} with pIC50 {pic50}")
-        sdf_path = os.path.join(str(self.config.ligand_path),"Ligand_SDF",f"{pdb_id}_ligand.sdf")
-        collection.add_ligand(sdf_path, pdb_id, min_coord, max_coord)
+        ligand_path = os.path.join(str(self.config.ligand_path),f"{pdb_id}_ligand.sdf")
+        collection.add_ligand(ligand_path, pdb_id, min_coord, max_coord)
        # ligand = collection.ligands.get(pdb_id)
         if collection.ligands.get(pdb_id) is None:
             return None
@@ -47,7 +47,7 @@ class NextPandemicsGraphGenerator:
 
         self.output_path.mkdir(parents=True, exist_ok=True)
 
-        if self._use_pocket_mode():
+        if bool(self._use_pocket_mode()):
             self._build_pocket_graphs()
 
         else:
