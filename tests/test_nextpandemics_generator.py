@@ -16,7 +16,7 @@ config = NextPandemicsDataConfig(
     ligand_path=Path("C:\\Users\\natal\\code_binding_data_and_results\\data\\Mpro-URV\\Ligand\\Ligand_SDF"),
     protein_path=None,
     interaction_path=None,
-    output_path=Path("output_test_nextpandemics")
+    output_path=Path("C:\\Users\\natal\\code_binding_data_and_results\\results\\output_test_nextpandemics")
 )
 
 generator = NextPandemicsGraphGenerator(config)

@@ -20,12 +20,10 @@ class NextPandemicsGraphGenerator:
         """Single-sample graph creation."""
         #print(f"Building ligand graph for {pdb_id} with pIC50 {pic50}")
         ligand_path = os.path.join(str(self.config.ligand_path),f"{pdb_id}_ligand.sdf")
-        collection.add_ligand(ligand_path, pdb_id, min_coord, max_coord)
+        collection.add_ligand(ligand_path, pdb_id, pic50, min_coord, max_coord)
        # ligand = collection.ligands.get(pdb_id)
         if collection.ligands.get(pdb_id) is None:
             return None
-
-        # convert ligand into Data(...)
 
     def _use_pocket_mode(self):
 
@@ -53,6 +51,6 @@ class NextPandemicsGraphGenerator:
         else:
             collection = LigandCollection()
             for pdb_id, pic50 in tqdm(pic50_dict.items(), desc="Building ligand graphs"):
-                data = self._build_ligand_graphs(collection, pdb_id, pic50, min_coord, max_coord)
-
+                self._build_ligand_graphs(collection, pdb_id, pic50, min_coord, max_coord)
+            torch.save(collection.data_list, os.path.join(self.output_path, f"GraphInteraction_ligand_output_data.pt"))
 

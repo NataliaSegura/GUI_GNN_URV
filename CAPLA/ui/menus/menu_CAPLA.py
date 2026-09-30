@@ -40,7 +40,7 @@ class MenuCAPLA(QMenu):
 
     def init_actions(self) -> None:
 
-        self.generate_data_action = QAction("Generate GRAPH", self)
+        self.generate_data_action = QAction("Generate graph", self)
         self.generate_data_action.triggered.connect(self.open_generate_data_dialog)
         self.addAction(self.generate_data_action)
 

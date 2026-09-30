@@ -1,12 +1,12 @@
 # data_pipeline/nextpandemics_ligand.py
 
-from pathlib import Path
 from rdkit import Chem
 from rdkit.Chem import rdPartialCharges
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 import numpy as np
 from data_pipeline.atom_utils import HBD_PATTERN, HBA_PATTERN, FLEXIBILITY_BOND_PATTERN, PERIODIC_ELEMENTS, HYBRIDIZATION, AA_3TO1, BOND_TYPES_COVALENT, BOND_TYPES_NON_COVALENT
 import torch
+from torch_geometric.data import Data
 
 
 class Ligand:
@@ -35,6 +35,7 @@ class Ligand:
         self.ligand_path = ligand_path
         self.mol = None
         self.name = None
+        self.target = None
         self.features = []
         self.edges = []
         self.edge_features = []
@@ -192,8 +193,6 @@ class Ligand:
             
             # edge_feat tiene forma: [Covalente, NC_1, ..., NC_23, Flexibilidad]
             # Queremos insertar la distancia justo antes de la flexibilidad (el último elemento)
-            
-            # Opción 1: Slicing de listas/arrays
             updated_feat = list(edge_feat[:-1]) + [distance] + [edge_feat[-1]]
             
             edge_features_updated.append(updated_feat)
@@ -255,14 +254,34 @@ class Ligand:
             self._build_edges_one_hot()
             self._add_edge_distances()
 
-            return True
         except Exception as e:
             print(f"Error building graph for {self.name}: {e}")
-            return False
 
+    def to_graph_to_data(self, encoder=None) -> Data:
+        """
+        Convert ligand graph to Data format.
+        """
+        self.features = np.array(self.features)
+        self.features = torch.as_tensor(self.features, dtype=torch.float)
+        self.y= torch.as_tensor([self.y], dtype=torch.float)
+        self.edges = torch.as_tensor(self.edges, dtype=torch.long).t().contiguous()
 
+        if self.edge_features.size > 0:
+            #self.edge_features = torch.stack([torch.as_tensor(x, dtype=torch.float) for x in self.edge_features])
+            self.edge_features = torch.tensor(self.edge_features,dtype=torch.float)
+        else:
+            self.edge_features = torch.empty((0, self.features.size(1)))
 
+        if encoder is not None:
+            self.features = encoder.encode_nodes(self.features)
+            if self.edge_features.numel() > 0:
+                self.edge_features = encoder.encode_edges(self.edge_features)
 
+        if not self.name:
+            print("No name added to a ligand, check code to fix it")
+        #return Data(x=self.features, edge_index=self.edges, edge_attr=self.edge_features, name=self.name, y = self.y)
+
+        return Data(x=self.features, edge_index=self.edges, edge_attr=self.edge_features, num_nodes = self.num_atoms, name=self.name, y = self.y)
 
 
 class LigandCollection:
@@ -270,11 +289,14 @@ class LigandCollection:
     def __init__(self):
         self.ligands = {}
         self.failed_ligands = []
+        self.data_list = []
 
-    def add_ligand(self, sdf_path, pdb_id, min_coord, max_coord):
+    def add_ligand(self, sdf_path, pdb_id, pic50, min_coord, max_coord):
         try:
             ligand = Ligand(sdf_path, min_coord, max_coord)
+            ligand.y = pic50
             self.ligands[pdb_id] = ligand
+            self.data_list.append(ligand.to_graph_to_data())
         except Exception as e:
             print(f"Failed to load ligand {pdb_id}: {e}")
             self.failed_ligands.append(pdb_id)
