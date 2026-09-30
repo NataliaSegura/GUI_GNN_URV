@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class MenuURVDEEPTAF(QMenu):
     def __init__(self, parent_window):
-        super().__init__("URVDEEPDTAF", parent_window)
+        super().__init__("GraphDeepDTAF", parent_window)
         self.main_window = parent_window
 
         self.init_actions()

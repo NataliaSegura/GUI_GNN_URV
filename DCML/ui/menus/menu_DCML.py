@@ -30,7 +30,7 @@ class MenuDCML(QMenu):
         self.init_actions()
 
     def init_actions(self):
-        self.generate_data_action = QAction("Generate Data", self)
+        self.generate_data_action = QAction("Generate graph", self)
         self.generate_data_action.triggered.connect(self.open_generate_data_dialog)
         self.addAction(self.generate_data_action)
 
@@ -38,13 +38,14 @@ class MenuDCML(QMenu):
         self.train_action.triggered.connect(self.open_train_dialog)
         self.addAction(self.train_action)
 
-        self.search_action = QAction("Search", self)
-        self.search_action.triggered.connect(self.open_search_dialog)
-        self.addAction(self.search_action)
-
-        self.evaluate_action = QAction("Evaluate", self)
+        self.evaluate_action = QAction("Predict", self)
         self.evaluate_action.triggered.connect(self.open_test_dialog)
         self.addAction(self.evaluate_action)
+        
+        self.search_action = QAction("Hyperparameter tuning", self)
+        self.search_action.triggered.connect(self.open_search_dialog)
+        self.addAction(self.search_action)
+        
 
     def _set_actions_enabled(self, enabled: bool):
         for action in (self.generate_data_action, self.train_action, self.search_action, self.evaluate_action):

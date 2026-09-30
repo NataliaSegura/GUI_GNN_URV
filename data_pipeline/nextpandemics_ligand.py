@@ -4,8 +4,10 @@ from pathlib import Path
 from rdkit import Chem
 from rdkit.Chem import rdPartialCharges
 from typing import Dict, List, Optional, Tuple
+import numpy as np
+from data_pipeline.atom_utils import HBD_PATTERN, HBA_PATTERN, FLEXIBILITY_BOND_PATTERN, PERIODIC_ELEMENTS, HYBRIDIZATION, AA_3TO1, BOND_TYPES_COVALENT, BOND_TYPES_NON_COVALENT
+import torch
 
-from data_pipeline.atom_utils import HBD_PATTERN, HBA_PATTERN, FLEXIBILITY_BOND_PATTERN
 
 class Ligand:
     """
@@ -105,6 +107,13 @@ class Ligand:
             self.flexible_edges.add((match[1], match[0]))
 
 
+    def _one_of_k_encoding_unk(self, x, allowable_set: List) -> List[bool]:
+        """One-hot encoding with unknown handling."""
+        if x not in allowable_set:
+            x = allowable_set[-1]
+        return [x == s for s in allowable_set]
+
+
     def _atom_features_one_hot(self, atom) -> np.ndarray:
         """ Extract features for a single atom.
         Args: atom: RDKit atom object
@@ -116,18 +125,15 @@ class Ligand:
         is_aromatic = [float(atom.GetIsAromatic())]
         resname_vec = self._one_of_k_encoding_unk("LIG", list(AA_3TO1.keys()))
 
-        if self.node_feature_selection == 0:
-            hybrid = atom.GetHybridization().name
-            hybridization = self._one_of_k_encoding_unk(hybrid, HYBRIDIZATION)
-            features = element_vec + resname_vec + hybridization + degree + num_h + is_aromatic
-
-        elif self.node_feature_selection == 1:
-            implicit_val = [atom.GetImplicitValence() / 10.0]
-            features = element_vec + resname_vec  + degree + num_h + is_aromatic + implicit_val
+        hybrid = atom.GetHybridization().name
+        hybridization = self._one_of_k_encoding_unk(hybrid, HYBRIDIZATION)
+        features = element_vec + resname_vec + hybridization + degree + num_h + is_aromatic
 
         return np.array(features)
 
-
+    def _bond_features_one_hot(self, bond_type: str) -> np.ndarray:
+        """Extract features for a bond."""
+        return np.array(self._one_of_k_encoding_unk(bond_type,BOND_TYPES_COVALENT + BOND_TYPES_NON_COVALENT))
 
     def _extract_atom_features(self):
         """Extract one-hot encoded features for each non-hydrogen atom."""
@@ -135,10 +141,85 @@ class Ligand:
         for i, atom in enumerate(self.mol.GetAtoms()):
             if atom.GetSymbol() != 'H':
                 feat = self._atom_features_one_hot(atom)
-                self.features.append(feat)
+                #torch.tensor(cont_array, dtype=torch.float)
+                self.features.append(torch.tensor(feat, dtype=torch.float))
             else:
                 self.index_H_atoms.append(i)
 
+
+    def _normalize_3d_coord(self, coord: List[float], min_coord: List[float],
+                            max_coord: List[float]) -> np.ndarray:
+        """Normalize 3D coordinates using min-max normalization."""
+        coord = np.array(coord, dtype=float)
+        min_coord = np.array(min_coord, dtype=float)
+        max_coord = np.array(max_coord, dtype=float)
+
+        range_coord = max_coord - min_coord
+        range_coord[range_coord == 0] = 1.0
+
+        return (coord - min_coord) / range_coord
+    
+
+    def _add_sdf_coordinates(self, min_coord: List[float], max_coord: List[float]):
+        """Add normalized coordinates from SDF conformer."""
+        conf = self.mol.GetConformer()
+        self.coordinates = []
+        features_with_coords = []
+
+        #if self.use_embedding_nodes:
+        #    features = self.continuous_features
+        #else:
+        #    features = self.features
+
+        for i, feat in enumerate(self.features):
+            pos = conf.GetAtomPosition(i)
+            coords = self._normalize_3d_coord([pos.x, pos.y, pos.z], min_coord, max_coord)
+            self.coordinates.append(coords)
+            features_with_coords.append(np.concatenate([feat, coords]))
+
+        self.features = features_with_coords
+
+
+    def _add_edge_distances(self):
+        """Add Euclidean distances to edge features without losing non-covalent multi-hot vectors."""
+        edge_features_updated = []
+        
+        for (src_idx, tgt_idx), edge_feat in zip(self.edges, self.edge_features):
+            src_coords = self.coordinates[src_idx]
+            tgt_coords = self.coordinates[tgt_idx]
+
+            distance = np.linalg.norm(src_coords - tgt_coords)
+            
+            # edge_feat tiene forma: [Covalente, NC_1, ..., NC_23, Flexibilidad]
+            # Queremos insertar la distancia justo antes de la flexibilidad (el último elemento)
+            
+            # Opción 1: Slicing de listas/arrays
+            updated_feat = list(edge_feat[:-1]) + [distance] + [edge_feat[-1]]
+            
+            edge_features_updated.append(updated_feat)
+
+        self.edge_features = np.array(edge_features_updated, dtype=np.float32)
+
+
+    def _build_edges_one_hot(self):
+        """Build edges with one-hot encoded bond features."""
+        #bonds_kekulized = Chem.SDMolSupplier(self.sdf_path.replace("Ligand_SDF", "Ligand_SDF_Kekulized"), sanitize=False, removeHs=True)[0]
+        for bond in self.mol.GetBonds():
+
+       # if bonds_kekulized is None:
+      #     raise ValueError(f"Invalid SDF file or molecule at: {self.sdf_path.replace("Ligand_SDF", "Ligand_SDF_Kekulized")}")
+
+        #for bond in bonds_kekulized.GetBonds():
+            a, b = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+
+            # Skip hydrogen atoms
+            if a not in self.index_H_atoms and b not in self.index_H_atoms:
+                if a < self.num_atoms and b < self.num_atoms:
+                    self.edges.append([a, b])
+                    bond_feat = self._bond_features_one_hot(bond.GetBondType().name)
+                    self.edge_features.append(bond_feat / sum(bond_feat))
+        assert len(self.edges) == len(self.edge_features), f"Number of Edges: {len(self.edges)}, Number of rows with Edge Features: {len(self.edge_features)}"
+        self.num_edges = len(self.edges)
 
 
     def _build_graph(self, 
@@ -171,14 +252,9 @@ class Ligand:
             self._add_sdf_coordinates(min_coord, max_coord)
 
             # Build edges
-            self._build_edges(simplified_edge_distances=simplified_edge_distances)
+            self._build_edges_one_hot()
+            self._add_edge_distances()
 
-            # Add distances to edges if requested
-            if include_edge_distances:
-                self._add_edge_distances()
-                # Remove coords from node features if not explicitly requested
-                if not include_coords:
-                    self.features = [f[:-3] for f in self.features]
             return True
         except Exception as e:
             print(f"Error building graph for {self.name}: {e}")

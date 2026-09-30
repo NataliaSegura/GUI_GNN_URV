@@ -33,7 +33,7 @@ class MenuDEAttentionDTA(QMenu):
         self.init_actions()
 
     def init_actions(self) -> None:
-        self.generate_data_action = QAction("Generate Data", self)
+        self.generate_data_action = QAction("Generate graph", self)
         self.generate_data_action.triggered.connect(self.open_prepare_dialog)
         self.addAction(self.generate_data_action)
 
@@ -41,13 +41,14 @@ class MenuDEAttentionDTA(QMenu):
         self.train_action.triggered.connect(self.open_train_dialog)
         self.addAction(self.train_action)
 
-        self.hpo_action = QAction("Search", self)
-        self.hpo_action.triggered.connect(self.open_hpo_dialog)
-        self.addAction(self.hpo_action)
-
-        self.test_action = QAction("Evaluate", self)
+        self.test_action = QAction("Predict", self)
         self.test_action.triggered.connect(self.open_test_dialog)
         self.addAction(self.test_action)
+
+        self.hpo_action = QAction("Hyperparameter tuning", self)
+        self.hpo_action.triggered.connect(self.open_hpo_dialog)
+        self.addAction(self.hpo_action)
+        
 
     def _set_actions_enabled(self, enabled: bool) -> None:
         for action in (self.generate_data_action, self.train_action, self.hpo_action, self.test_action):

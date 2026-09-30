@@ -30,7 +30,7 @@ class MenuEDNN(QMenu):
         self.init_actions()
 
     def init_actions(self):
-        generate_data_action = QAction("Generate Data", self)
+        generate_data_action = QAction("Generate graph", self)
         generate_data_action.triggered.connect(self.generate_data_ednn)
         self.addAction(generate_data_action)
 
@@ -38,13 +38,13 @@ class MenuEDNN(QMenu):
         train_action.triggered.connect(self.train_model_ednn)
         self.addAction(train_action)
 
-        batch_train_action = QAction("Search", self)
-        batch_train_action.triggered.connect(self.train_all_models_ednn)
-        self.addAction(batch_train_action)
-
-        test_action = QAction("Evaluate", self)
+        test_action = QAction("Predict", self)
         test_action.triggered.connect(self.test_model_ednn)
         self.addAction(test_action)
+        
+        batch_train_action = QAction("Hyperparameter tuning", self)
+        batch_train_action.triggered.connect(self.train_all_models_ednn)
+        self.addAction(batch_train_action)
 
 
     def generate_data_ednn(self):

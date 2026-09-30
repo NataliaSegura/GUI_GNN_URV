@@ -24,10 +24,10 @@ class MenuDeepDTA(QMenu):
         self.evaluate_thread = None
         self.hyperparameter_search_thread = None
 
-        self.generate_action = QAction("Generate Data", self)
+        self.generate_action = QAction("Generate graph", self)
         self.train_action = QAction("Train", self)
-        self.hyperparameter_search_action = QAction("Search", self)
-        self.evaluate_action = QAction("Evaluate", self)
+        self.evaluate_action = QAction("Predict", self)
+        self.hyperparameter_search_action = QAction("Hyperparameter tuning", self)
 
 
         self.generate_action.triggered.connect(self.open_generate_data_dialog)

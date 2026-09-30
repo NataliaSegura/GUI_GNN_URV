@@ -9,6 +9,29 @@ ATOM_TYPES_DTA = ["C","N","O","S","F","Si","P","Cl","Br","Mg","Na","Ca","Fe","As
                   "Zn","H","Li","Ge","Cu","Au","Ni","Cd","In","Mn","Zr","Cr","Pt",
                   "Hg","Pb","Unknown"]
 
+PERIODIC_ELEMENTS = ['C', 'N', 'O', 'S', 'F', 'Si', 'P', 'Cl', 'Br', 'Mg', 'Na', 'Ca',
+                        'Fe', 'As', 'Al', 'I', 'B', 'V', 'K', 'Sb', 'Sn', 'Ag',
+                        'Pd', 'Co', 'Se', 'Ti', 'Zn', 'H', 'Li', 'Ge', 'Cu',  'Ni',
+                        'Cd', 'In', 'Mn', 'Zr', 'Cr', 'Pb', 'Unknown']
+
+HYBRIDIZATION = ['S', 'SP', 'SP2', 'SP2D', 'SP3', 'SP3D', 'OTHER', 'UNSPECIFIED']
+
+AA_3TO1 = {"ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLU": "E",
+            "GLN": "Q", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
+            "MET": "M", "PHE": "F", "PRO": "P", "SER": "S", "THR": "T", "TRP": "W",
+            "TYR": "Y", "VAL": "V", "LIG": "X"}
+
+BOND_TYPES_COVALENT = ["NONE","SINGLE","DOUBLE","TRIPLE","QUADRUPLE","QUINTUPLE","HEXTUPLE","ONEANDAHALF",
+                        "TWOANDAHALF","THREEANDAHALF", "FOURANDAHALF","FIVEANDAHALF","AROMATIC","IONIC", "HYDROGEN",
+                        "THREECENTER","DATIVEONE","DATIVE","DATIVEL","DATIVER","OTHER", "ZERO","PEPTIDE"]
+
+BOND_TYPES_NON_COVALENT = [
+    "AMIDERING", "hydrophobic", "CARBONPI", "DONORPI", "weak_polar",
+    "weak_hbond", "aromatic", "METSULPHURPI", "EF", "polar", "FE",
+    "hbond", "FF", "FT", "OT", "OE", "OF", "carbonyl", "ET",
+    "xbond", "HALOGENPI", "ionic", "CATIONPI"
+]
+
 HBD_PATTERN = Chem.MolFromSmarts('[$([N;!H0;v3,v4&+1]),$([O,S;H1;+0]),n&H1&+0]')
 
 # Aceptor: N u O con pares libres disponibles (definición estándar de Lipinski)

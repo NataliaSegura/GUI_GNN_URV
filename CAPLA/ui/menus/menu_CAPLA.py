@@ -40,7 +40,7 @@ class MenuCAPLA(QMenu):
 
     def init_actions(self) -> None:
 
-        self.generate_data_action = QAction("Generate Data", self)
+        self.generate_data_action = QAction("Generate GRAPH", self)
         self.generate_data_action.triggered.connect(self.open_generate_data_dialog)
         self.addAction(self.generate_data_action)
 
@@ -48,13 +48,14 @@ class MenuCAPLA(QMenu):
         self.train_action.triggered.connect(self.open_train_dialog)
         self.addAction(self.train_action)
 
-        self.hpo_action = QAction("Search", self)
+        self.test_action = QAction("Predict", self)
+        self.test_action.triggered.connect(self.open_test_dialog)
+        self.addAction(self.test_action)
+        
+        self.hpo_action = QAction("Hyperparameter tuning", self)
         self.hpo_action.triggered.connect(self.open_hpo_dialog)
         self.addAction(self.hpo_action)
 
-        self.test_action = QAction("Evaluate", self)
-        self.test_action.triggered.connect(self.open_test_dialog)
-        self.addAction(self.test_action)
 
     def _set_actions_enabled(self, enabled: bool) -> None:
         for action in (
