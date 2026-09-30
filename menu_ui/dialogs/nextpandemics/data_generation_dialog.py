@@ -64,7 +64,7 @@ class DBGenerationDialog(QDialog):
         self.distance_input.setRange(0.0, 100.0)
         self.distance_input.setSingleStep(0.1)  # increment/decrement by 0.1
         self.distance_input.setValue(5.0)       # default value = 5
-        self.distance_input.setSuffix(" Å")
+        #self.distance_input.setSuffix(" Å")
         self.distance_input.setToolTip("Distance threshold used to create protein interactions.")
 
         self.output_dir_input = QLineEdit()
@@ -101,7 +101,7 @@ class DBGenerationDialog(QDialog):
         )
 
         form_layout.addRow(
-            "Distance:",
+            "Distance (Å):",
             self.distance_input,
         )
 
