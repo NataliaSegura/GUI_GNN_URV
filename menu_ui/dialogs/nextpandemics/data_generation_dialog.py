@@ -230,7 +230,7 @@ class DBGenerationDialog(QDialog):
             interaction_path=Path(self.interaction_dir_input.text().strip())
                 if self.interaction_dir_input.text().strip()
                 else None,
-            distance=float(self.distance_input.text())
+            distance=float(self.distance_input.text().replace("Å", "").strip())
                 if self.distance_input.text().strip()
                 else None,
             output_path=Path(output_dir),
